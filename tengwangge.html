@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>滕王阁序 互动H5</title>
+    <style>
+        body {
+            font-family: 'STKaiti', 'KaiTi', '楷体', serif;
+            background: linear-gradient(135deg, #f8f5f0 0%, #e6e0d0 100%), url('https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1920&q=80') center center/cover no-repeat fixed;
+            color: #2d1a06;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        /* 水波动画 */
+        .water-wave {
+            position: fixed;
+            left: 0; right: 0; bottom: 0;
+            height: 140px;
+            z-index: 0;
+            pointer-events: none;
+            background: url('https://cdn.jsdelivr.net/gh/naptha/wavejs@master/wave.svg') repeat-x bottom;
+            animation: waveMove 12s linear infinite;
+            opacity: 0.22;
+            width: 100vw;
+        }
+        @keyframes waveMove {
+            0% { background-position-x: 0; }
+            100% { background-position-x: 1000px; }
+        }
+        /* 飘落花瓣动画 */
+        .petal {
+            position: fixed;
+            top: -40px;
+            width: 32px;
+            height: 32px;
+            pointer-events: none;
+            z-index: 1;
+            opacity: 0.7;
+            animation: fall 8s linear infinite;
+        }
+        @keyframes fall {
+            0% { transform: translateY(0) rotate(0deg) scale(1); opacity: 0.7; }
+            80% { opacity: 0.8; }
+            100% { transform: translateY(100vh) rotate(360deg) scale(0.7); opacity: 0; }
+        }
+        /* 多层流云动画 */
+        .cloud, .cloud2, .cloud3 {
+            position: fixed;
+            left: -300px;
+            background-repeat: no-repeat;
+            background-size: contain;
+            opacity: 0.13;
+            z-index: 0;
+            pointer-events: none;
+        }
+        .cloud {
+            top: 40px;
+            width: 220px;
+            height: 80px;
+            background-image: url('https://png.pngtree.com/png-clipart/20220116/original/pngtree-chinese-style-clouds-png-image_7100952.png');
+            animation: cloudMove 60s linear infinite;
+            opacity: 0.18;
+        }
+        .cloud2 {
+            top: 120px;
+            width: 320px;
+            height: 100px;
+            background-image: url('https://png.pngtree.com/png-clipart/20220116/original/pngtree-chinese-style-clouds-png-image_7100952.png');
+            animation: cloudMove 90s linear infinite;
+        }
+        .cloud3 {
+            top: 200px;
+            width: 180px;
+            height: 60px;
+            background-image: url('https://png.pngtree.com/png-clipart/20220116/original/pngtree-chinese-style-clouds-png-image_7100952.png');
+            animation: cloudMove 120s linear infinite;
+            opacity: 0.09;
+        }
+        @keyframes cloudMove {
+            0% { left: -300px; }
+            100% { left: 100vw; }
+        }
+        /* 飞鸟SVG动画 */
+        .bird {
+            position: fixed;
+            top: 80px;
+            left: -80px;
+            width: 60px;
+            height: 40px;
+            z-index: 2;
+            pointer-events: none;
+            opacity: 0.7;
+            animation: birdFly 18s linear infinite;
+        }
+        @keyframes birdFly {
+            0% { left: -80px; top: 80px; opacity: 0.7; }
+            10% { opacity: 1; }
+            50% { top: 120px; }
+            90% { opacity: 1; }
+            100% { left: 100vw; top: 60px; opacity: 0.7; }
+        }
+        .page-container {
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            z-index: 2;
+        }
+        .page {
+            width: 100%;
+            background: rgba(255,255,255,0.93);
+            border-radius: 18px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+            margin: 36px 0 24px 0;
+            padding: 32px 22px 38px 22px;
+            min-height: 440px;
+            opacity: 1;
+            transform: translateY(60px) scale(0.98);
+            pointer-events: none;
+            position: absolute;
+            left: 0; right: 0;
+            transition: opacity 0.9s cubic-bezier(.4,0,.2,1), transform 0.9s cubic-bezier(.4,0,.2,1);
+            overflow: hidden;
+        }
+        .page:not(.active) {
+            opacity: 0;
+        }
+        .page.active {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+            pointer-events: auto;
+            position: relative;
+            z-index: 2;
+        }
+        .page-bg {
+            position: absolute;
+            left: 0; top: 0; right: 0; bottom: 0;
+            width: 100%; height: 100%;
+            z-index: 0;
+            opacity: 0.18;
+            background-position: center 40px;
+            background-size: cover;
+            background-repeat: no-repeat;
+        }
+        .page-bg-mask {
+            position: absolute;
+            left: 0; top: 0; right: 0; bottom: 0;
+            width: 100%; height: 100%;
+            background: rgba(255,255,255,0.65);
+            z-index: 1;
+        }
+        .page-ornament {
+            width: 100%;
+            text-align: center;
+            margin: 0 0 16px 0;
+            position: relative;
+            z-index: 2;
+        }
+        .page-ornament img {
+            width: 90px;
+            max-width: 100%;
+            border-radius: 12px;
+            box-shadow: 0 2px 16px #e2c18533;
+            opacity: 0.92;
+            transition: filter 0.5s;
+        }
+        .page-content, .interaction-section {
+            position: relative;
+            z-index: 2;
+        }
+        .page-header {
+            font-size: 1.6em;
+            color: #a06a1a;
+            text-align: center;
+            letter-spacing: 4px;
+            margin-bottom: 10px;
+            font-family: 'STKaiti', 'KaiTi', '楷体', serif;
+            border-bottom: 2px solid #e2c185;
+            padding-bottom: 6px;
+            background: linear-gradient(90deg, #f7e7c1 60%, #f5efe6 100%);
+            border-radius: 8px 8px 0 0;
+            box-shadow: 0 2px 8px #e2c18522;
+        }
+        .page-ornament {
+            width: 100%;
+            text-align: center;
+            margin: 0 0 16px 0;
+        }
+        .page-ornament img {
+            width: 90px;
+            max-width: 100%;
+            border-radius: 12px;
+            box-shadow: 0 2px 16px #e2c18533;
+            opacity: 0.92;
+            transition: filter 0.5s;
+        }
+        .page-content {
+            font-size: 1.18em;
+            line-height: 2.1;
+            margin-bottom: 18px;
+            color: #2d1a06;
+            text-align: center;
+            text-shadow: 0 2px 8px #fff, 0 1px 0 #e2c18544;
+        }
+        .poem-line {
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeInLine 0.8s forwards;
+            margin: 0 auto 8px auto;
+            max-width: 90%;
+            font-size: 1.13em;
+            color: #3e2c1a;
+            text-shadow: 0 2px 8px #fff, 0 1px 0 #e2c18544;
+        }
+        .poem-line:nth-child(1) { animation-delay: 0.1s; }
+        .poem-line:nth-child(2) { animation-delay: 0.4s; }
+        .poem-line:nth-child(3) { animation-delay: 0.7s; }
+        .poem-line:nth-child(4) { animation-delay: 1.0s; }
+        .poem-line:nth-child(5) { animation-delay: 1.3s; }
+        .poem-line:nth-child(6) { animation-delay: 1.6s; }
+        .poem-line:nth-child(7) { animation-delay: 1.9s; }
+        .poem-line:nth-child(8) { animation-delay: 2.2s; }
+        .poem-line:nth-child(9) { animation-delay: 2.5s; }
+        .poem-line:nth-child(10) { animation-delay: 2.8s; }
+        @keyframes fadeInLine {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .note {
+            color: #b4884d;
+            border-bottom: 1px dashed #b4884d;
+            cursor: pointer;
+            position: relative;
+        }
+        .note-popup {
+            display: none;
+            position: absolute;
+            left: 0;
+            top: 1.5em;
+            background: #fffbe8;
+            color: #3e2c1a;
+            border: 1px solid #e2c185;
+            border-radius: 6px;
+            padding: 8px 12px;
+            z-index: 10;
+            min-width: 120px;
+            font-size: 0.95em;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .interaction-section {
+            margin: 32px 0 0 0;
+            background: #f5efe6;
+            border-radius: 10px;
+            padding: 18px 12px 14px 12px;
+            box-shadow: 0 1px 8px rgba(180,136,77,0.09);
+            color: #4a2c0a;
+            font-size: 1.08em;
+            text-align: center;
+        }
+        .game-btn {
+            padding: 7px 18px;
+            background: #b4884d;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            margin-left: 8px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: background 0.2s, box-shadow 0.2s;
+            box-shadow: 0 2px 8px #e2c18522;
+        }
+        .game-btn:hover {
+            background: #a0762b;
+            box-shadow: 0 4px 16px #e2c18544;
+        }
+        .game-input {
+            padding: 6px 10px;
+            border: 1px solid #b4884d;
+            border-radius: 4px;
+            font-size: 1em;
+        }
+        .progress-bar {
+            width: 92%;
+            height: 10px;
+            background: #f0e3c0;
+            border-radius: 7px;
+            margin: 0 auto 18px auto;
+            overflow: hidden;
+            box-shadow: 0 1px 6px #e2c18533;
+        }
+        .progress-inner {
+            height: 100%;
+            background: linear-gradient(90deg,#b4884d,#e2c185);
+            border-radius: 7px;
+            transition: width 0.5s;
+        }
+        .nav-btns {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 22px;
+        }
+        .nav-btns button {
+            background: #e2c185;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 28px;
+            font-size: 1.08em;
+            margin: 0 10px;
+            cursor: pointer;
+            transition: background 0.2s, box-shadow 0.2s;
+            box-shadow: 0 2px 8px #e2c18522;
+        }
+        .nav-btns button:disabled {
+            background: #e9e2d0;
+            color: #b4884d;
+            cursor: not-allowed;
+        }
+        .nav-btns button[disabled] {
+            filter: grayscale(0.5) brightness(1.2);
+        }
+        @media (max-width: 700px) {
+            .page-container {padding:0;}
+            .page {padding: 12px 2vw 18px 2vw; min-height: 320px;}
+            .page-header {font-size: 1.08em;}
+            .page-ornament img {width: 60px;}
+        }
+        .reward-effect {
+            position: fixed;
+            left: 50%;
+            top: 30%;
+            transform: translate(-50%, -50%);
+            z-index: 99;
+            pointer-events: none;
+            animation: rewardPop 0.5s cubic-bezier(.4,2,.2,1) 1, rewardFade 2s 0.5s linear forwards;
+            text-align: center;
+        }
+        @keyframes rewardPop {
+            0% { opacity: 0; transform: scale(0.5) translate(-50%, -50%); }
+            60% { opacity: 1; transform: scale(1.2) translate(-50%, -50%); }
+            100% { opacity: 1; transform: scale(1) translate(-50%, -50%); }
+        }
+        @keyframes rewardFade {
+            to { opacity: 0; }
+        }
+        .reward-stars {
+            font-size: 2.2em;
+            color: #ffd700;
+            text-shadow: 0 0 8px #fffbe8, 0 0 16px #ffd70088;
+            margin-bottom: 8px;
+        }
+        .reward-text {
+            font-size: 1.3em;
+            color: #b4884d;
+            font-weight: bold;
+            text-shadow: 0 2px 8px #fffbe8;
+        }
+        .reward-confetti {
+            position: fixed;
+            left: 0; top: 0; width: 100vw; height: 100vh;
+            pointer-events: none;
+            z-index: 98;
+        }
+    </style>
+</head>
+<body>
+    <div class="page-container">
+        <div class="progress-bar"><div class="progress-inner" id="progressInner" style="width:20%"></div></div>
+        <div id="page0" class="page active">
+            <div class="page-bg" style="background-image:url('https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80')"></div>
+            <div class="page-bg-mask"></div>
+            <div class="page-ornament"><img src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=600&q=80" alt="序文水墨"></div>
+            <div class="page-header">开篇（序文）</div>
+            <div class="page-content">
+                <div class="poem-line"><span class="note" data-note="今江西南昌">豫章故郡，洪都新府。</span>星分翼轸，地接衡庐。</div>
+                <div class="poem-line">襟三江而带五湖，控蛮荆而引瓯越。</div>
+                <div class="poem-line">物华天宝，龙光射牛斗之墟；人杰地灵，徐孺下陈蕃之榻。</div>
+                <div class="poem-line">雄州雾列，俊采星驰。台隍枕夷夏之交，宾主尽东南之美。</div>
+                <div class="poem-line">都督阎公之雅望，棨戟遥临；宇文新州之懿范，襜帷暂驻。</div>
+                <div class="poem-line">十旬休假，胜友如云；千里逢迎，高朋满座。</div>
+                <div class="poem-line">腾蛟起凤，孟学士之词宗；紫电青霜，王将军之武库。</div>
+                <div class="poem-line">家君作宰，路出名区；童子何知，躬逢胜饯。</div>
+            </div>
+            <div class="interaction-section">
+                <b>互动选择题：</b><br>
+                “物华天宝，龙光射牛斗之墟”中的“牛斗”指的是？<br>
+                <input type="radio" name="q1" value="星宿" id="q1a"><label for="q1a">A. 星宿</label><br>
+                <input type="radio" name="q1" value="动物" id="q1b"><label for="q1b">B. 动物</label><br>
+                <input type="radio" name="q1" value="地名" id="q1c"><label for="q1c">C. 地名</label><br>
+                <button class="game-btn" onclick="checkQ1()">提交</button>
+                <span id="q1result"></span>
+            </div>
+        </div>
+        <div id="page1" class="page">
+            <div class="page-bg" style="background-image:url('https://images.unsplash.com/photo-1464983953574-0892a716854b?auto=format&fit=crop&w=1200&q=80')"></div>
+            <div class="page-bg-mask"></div>
+            <div class="page-ornament"><img src="https://images.unsplash.com/photo-1464983953574-0892a716854b?auto=format&fit=crop&w=600&q=80" alt="写景水墨"></div>
+            <div class="page-header">写景</div>
+            <div class="page-content">
+                <div class="poem-line">时维九月，序属三秋。潦水尽而寒潭清，烟光凝而暮山紫。</div>
+                <div class="poem-line">俨骖𬴂于上路，访风景于崇阿。临帝子之长洲，得天人之旧馆。</div>
+                <div class="poem-line">层峦耸翠，上出重霄；飞阁流丹，下临无地。</div>
+                <div class="poem-line">鹤汀凫渚，穷岛屿之萦回；桂殿兰宫，即冈峦之体势。</div>
+                <div class="poem-line">披绣闼，俯雕甍，山原旷其盈视，川泽纡其骇瞩。</div>
+                <div class="poem-line">闾阎扑地，钟鸣鼎食之家；舸舰弥津，青雀黄龙之舳。</div>
+                <div class="poem-line">云销雨霁，彩彻区明。<span class="note" data-note="千古名句">落霞与孤鹜齐飞，秋水共长天一色。</span></div>
+                <div class="poem-line">渔舟唱晚，响穷彭蠡之滨；雁阵惊寒，声断衡阳之浦。</div>
+            </div>
+            <div class="interaction-section">
+                <b>互动填空：</b><br>
+                “落霞与孤鹜齐飞，______共长天一色。”<br>
+                <input class="game-input" id="q2input" type="text" placeholder="请填写…">
+                <button class="game-btn" onclick="checkQ2()">提交</button>
+                <span id="q2result"></span>
+            </div>
+        </div>
+        <div id="page2" class="page">
+            <div class="page-bg" style="background-image:url('https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1200&q=80')"></div>
+            <div class="page-bg-mask"></div>
+            <div class="page-ornament"><img src="https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=600&q=80" alt="抒情水墨"></div>
+            <div class="page-header">抒情</div>
+            <div class="page-content">
+                <div class="poem-line">遥襟甫畅，逸兴遄飞。爽籁发而清风生，纤歌凝而白云遏。</div>
+                <div class="poem-line">睢园绿竹，气凌彭泽之樽；邺水朱华，光照临川之笔。</div>
+                <div class="poem-line">四美具，二难并。穷睇眄于中天，极娱游于暇日。</div>
+                <div class="poem-line">天高地迥，觉宇宙之无穷；兴尽悲来，识盈虚之有数。</div>
+                <div class="poem-line">望长安于日下，目吴会于云间。地势极而南溟深，天柱高而北辰远。</div>
+                <div class="poem-line">关山难越，谁悲失路之人？萍水相逢，尽是他乡之客。</div>
+                <div class="poem-line">怀帝阍而不见，奉宣室以何年？</div>
+            </div>
+            <div class="interaction-section">
+                <b>互动判断题：</b><br>
+                “天高地迥，觉宇宙之无穷”表达了作者豁达乐观的情感。<br>
+                <button class="game-btn" onclick="checkQ3(true)">正确</button>
+                <button class="game-btn" onclick="checkQ3(false)">错误</button>
+                <span id="q3result"></span>
+            </div>
+        </div>
+        <div id="page3" class="page">
+            <div class="page-bg" style="background-image:url('https://images.unsplash.com/photo-1465101046530-73398c7f28ca?auto=format&fit=crop&w=1200&q=80')"></div>
+            <div class="page-bg-mask"></div>
+            <div class="page-ornament"><img src="https://images.unsplash.com/photo-1465101046530-73398c7f28ca?auto=format&fit=crop&w=600&q=80" alt="议论水墨"></div>
+            <div class="page-header">议论</div>
+            <div class="page-content">
+                <div class="poem-line">嗟乎！时运不齐，命途多舛。冯唐易老，李广难封。</div>
+                <div class="poem-line">屈贾谊于长沙，非无圣主；窜梁鸿于海曲，岂乏明时？</div>
+                <div class="poem-line">所赖君子见机，达人知命。老当益壮，宁移白首之心？</div>
+                <div class="poem-line">穷且益坚，不坠青云之志。酌贪泉而觉爽，处涸辙以犹欢。</div>
+                <div class="poem-line">北海虽赊，扶摇可接；东隅已逝，桑榆非晚。</div>
+                <div class="poem-line">孟尝高洁，空余报国之情；阮籍猖狂，岂效穷途之哭！</div>
+            </div>
+            <div class="interaction-section">
+                <b>互动拖拽排序（请按顺序排列下列典故）：</b><br>
+                <ul id="q4list" style="list-style:none;padding:0;">
+                    <li draggable="true" id="item1" style="margin:4px 0;padding:4px 8px;background:#f7f1e6;border-radius:4px;cursor:move;">冯唐易老</li>
+                    <li draggable="true" id="item2" style="margin:4px 0;padding:4px 8px;background:#f7f1e6;border-radius:4px;cursor:move;">李广难封</li>
+                    <li draggable="true" id="item3" style="margin:4px 0;padding:4px 8px;background:#f7f1e6;border-radius:4px;cursor:move;">屈贾谊于长沙</li>
+                    <li draggable="true" id="item4" style="margin:4px 0;padding:4px 8px;background:#f7f1e6;border-radius:4px;cursor:move;">窜梁鸿于海曲</li>
+                </ul>
+                <button class="game-btn" onclick="checkQ4()">提交</button>
+                <span id="q4result"></span>
+            </div>
+        </div>
+        <div id="page4" class="page">
+            <div class="page-bg" style="background-image:url('https://images.unsplash.com/photo-1502082553048-f009c37129b9?auto=format&fit=crop&w=1200&q=80')"></div>
+            <div class="page-bg-mask"></div>
+            <div class="page-ornament"><img src="https://images.unsplash.com/photo-1502082553048-f009c37129b9?auto=format&fit=crop&w=600&q=80" alt="结尾诗水墨"></div>
+            <div class="page-header">结尾诗</div>
+            <div class="page-content">
+                <div class="poem-line">勃，三尺微命，一介书生。无路请缨，等终军之弱冠；有怀投笔，慕宗悫之长风。</div>
+                <div class="poem-line">舍簪笏于百龄，奉晨昏于万里。非谢家之宝树，接孟氏之芳邻。</div>
+                <div class="poem-line">他日趋庭，叨陪鲤对；今兹捧袂，喜托龙门。</div>
+                <div class="poem-line">杨意不逢，抚凌云而自惜；钟期既遇，奏流水以何惭？</div>
+                <div class="poem-line">嗟乎！胜地不常，盛筵难再；兰亭已矣，梓泽丘墟。</div>
+                <div class="poem-line">临别赠言，幸承恩于伟饯；登高作赋，是所望于群公。</div>
+                <div class="poem-line">敢竭鄙怀，恭疏短引；一言均赋，四韵俱成。请洒潘江，各倾陆海云尔：</div>
+                <div class="poem-line">滕王高阁临江渚，佩玉鸣鸾罢歌舞。画栋朝飞南浦云，珠帘暮卷西山雨。</div>
+                <div class="poem-line">闲云潭影日悠悠，物换星移几度秋。阁中帝子今何在？槛外长江空自流。</div>
+            </div>
+            <div class="interaction-section">
+                <b>互动连线题：</b><br>
+                <span>请将下列诗句与其意境连线：</span><br>
+                <table style="width:100%;margin:8px 0;">
+                    <tr><td>1. 画栋朝飞南浦云</td><td><select id="q5a"><option>请选择</option><option>雨后初晴</option><option>清晨云起</option><option>夜色降临</option></select></td></tr>
+                    <tr><td>2. 珠帘暮卷西山雨</td><td><select id="q5b"><option>请选择</option><option>雨后初晴</option><option>清晨云起</option><option>夜色降临</option></select></td></tr>
+                </table>
+                <button class="game-btn" onclick="checkQ5()">提交</button>
+                <span id="q5result"></span>
+            </div>
+        </div>
+        <div class="nav-btns">
+            <button id="prevBtn" onclick="prevPage()">上一页</button>
+            <button id="nextBtn" onclick="nextPage()" disabled>下一页</button>
+        </div>
+    </div>
+    <script>
+        // 页面切换与动态
+        let currentPage = 0;
+        const totalPages = 5;
+        // 记录每关是否通过
+        let passed = [false, false, false, false, false];
+        function showPage(idx) {
+            for(let i=0;i<totalPages;i++) {
+                document.getElementById('page'+i).classList.remove('active');
+            }
+            document.getElementById('page'+idx).classList.add('active');
+            document.getElementById('progressInner').style.width = ((idx+1)/totalPages*100)+'%';
+            document.getElementById('prevBtn').disabled = idx===0;
+            // 只有通过本关才可点下一页
+            document.getElementById('nextBtn').disabled = !passed[idx] || idx===totalPages-1;
+            // 动态诗句淡入
+            setTimeout(()=>{
+                document.querySelectorAll('#page'+idx+' .poem-line').forEach(function(line,i){
+                    line.style.animationPlayState = 'running';
+                });
+            }, 100);
+        }
+        function nextPage() {
+            if(currentPage<totalPages-1 && passed[currentPage]){
+                currentPage++;
+                showPage(currentPage);
+            }
+        }
+        function prevPage() {
+            if(currentPage>0){
+                currentPage--;
+                showPage(currentPage);
+            }
+        }
+        showPage(currentPage);
+        // 注释弹窗逻辑
+        document.querySelectorAll('.note').forEach(function(el) {
+            el.addEventListener('click', function(e) {
+                let popup = el.querySelector('.note-popup');
+                if (!popup) {
+                    popup = document.createElement('div');
+                    popup.className = 'note-popup';
+                    popup.innerText = el.getAttribute('data-note');
+                    el.appendChild(popup);
+                }
+                popup.style.display = popup.style.display === 'block' ? 'none' : 'block';
+                // 点击外部关闭
+                document.addEventListener('click', function handler(ev) {
+                    if (!el.contains(ev.target)) {
+                        popup.style.display = 'none';
+                        document.removeEventListener('click', handler);
+                    }
+                });
+                e.stopPropagation();
+            });
+        });
+        function showReward() {
+            // 星星和祝贺
+            var reward = document.createElement('div');
+            reward.className = 'reward-effect';
+            reward.innerHTML = '<div class="reward-stars">✨✨✨</div><div class="reward-text">恭喜通关！</div>';
+            document.body.appendChild(reward);
+            // 彩带粒子
+            for(let i=0;i<18;i++){
+                let conf = document.createElement('div');
+                conf.className = 'reward-confetti';
+                conf.style.left = Math.random()*100+'vw';
+                conf.style.top = '-30px';
+                conf.style.width = '12px';
+                conf.style.height = '24px';
+                conf.style.position = 'fixed';
+                conf.style.background = 'linear-gradient(120deg,#ffd700,#f9b6c6,#b4884d,#fff0f6)';
+                conf.style.borderRadius = '6px';
+                conf.style.opacity = 0.7;
+                conf.style.transform = `rotate(${Math.random()*360}deg)`;
+                conf.style.transition = 'top 2s cubic-bezier(.4,1.5,.2,1), opacity 0.5s 1.5s';
+                document.body.appendChild(conf);
+                setTimeout(()=>{
+                    conf.style.top = (60+Math.random()*30)+'vh';
+                    conf.style.opacity = 0;
+                }, 30);
+                setTimeout(()=>{conf.remove();}, 2200);
+            }
+            setTimeout(()=>{reward.remove();}, 2000);
+        }
+        // 互动题逻辑（每关通过后允许下一页）
+        function checkQ1() {
+            var val = document.querySelector('input[name="q1"]:checked');
+            var result = document.getElementById('q1result');
+            if (val && val.value === '星宿') {
+                result.innerHTML = '<span style="color:green;">回答正确！</span>';
+                passed[0] = true;
+                document.getElementById('nextBtn').disabled = false;
+                showReward();
+            } else if (val) {
+                result.innerHTML = '<span style="color:red;">回答不正确。</span>';
+            } else {
+                result.innerHTML = '';
+            }
+        }
+        function checkQ2() {
+            var input = document.getElementById('q2input').value.trim();
+            var result = document.getElementById('q2result');
+            if (input === '秋水') {
+                result.innerHTML = '<span style="color:green;">回答正确！</span>';
+                passed[1] = true;
+                document.getElementById('nextBtn').disabled = false;
+                showReward();
+            } else if (input.length === 0) {
+                result.innerHTML = '';
+            } else {
+                result.innerHTML = '<span style="color:red;">回答不正确。</span>';
+            }
+        }
+        function checkQ3(isTrue) {
+            var result = document.getElementById('q3result');
+            if (!isTrue) {
+                result.innerHTML = '<span style="color:green;">回答正确！</span>';
+                passed[2] = true;
+                document.getElementById('nextBtn').disabled = false;
+                showReward();
+            } else {
+                result.innerHTML = '<span style="color:red;">回答不正确。</span>';
+            }
+        }
+        // 拖拽排序题
+        let dragSrcEl = null;
+        document.querySelectorAll('#q4list li').forEach(function(item) {
+            item.addEventListener('dragstart', function(e) {
+                dragSrcEl = this;
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/html', this.innerHTML);
+            });
+            item.addEventListener('dragover', function(e) {
+                if (e.preventDefault) e.preventDefault();
+                return false;
+            });
+            item.addEventListener('drop', function(e) {
+                if (e.stopPropagation) e.stopPropagation();
+                if (dragSrcEl !== this) {
+                    var temp = dragSrcEl.innerHTML;
+                    dragSrcEl.innerHTML = this.innerHTML;
+                    this.innerHTML = temp;
+                }
+                return false;
+            });
+        });
+        function checkQ4() {
+            var items = document.querySelectorAll('#q4list li');
+            var arr = Array.from(items).map(x=>x.innerText);
+            var answer = ['冯唐易老','李广难封','屈贾谊于长沙','窜梁鸿于海曲'];
+            var result = document.getElementById('q4result');
+            if (JSON.stringify(arr) === JSON.stringify(answer)) {
+                result.innerHTML = '<span style="color:green;">排序正确！</span>';
+                passed[3] = true;
+                document.getElementById('nextBtn').disabled = false;
+                showReward();
+            } else {
+                result.innerHTML = '<span style="color:red;">顺序不正确，请调整。</span>';
+            }
+        }
+        // 连线题
+        function checkQ5() {
+            var a = document.getElementById('q5a').value;
+            var b = document.getElementById('q5b').value;
+            var result = document.getElementById('q5result');
+            if (a === '清晨云起' && b === '雨后初晴') {
+                result.innerHTML = '<span style="color:green;">连线正确！</span>';
+                passed[4] = true;
+                document.getElementById('nextBtn').disabled = false;
+                showReward();
+            } else {
+                result.innerHTML = '<span style="color:red;">连线不正确。</span>';
+            }
+        }
+    </script>
+    <div class="water-wave"></div>
+    <div class="cloud"></div>
+    <div class="cloud cloud2"></div>
+    <div class="cloud cloud3"></div>
+    <svg class="bird" viewBox="0 0 60 40"><path d="M5 30 Q20 10 30 20 Q40 30 55 10" stroke="#222" stroke-width="2" fill="none"/><path d="M30 20 Q35 10 45 20" stroke="#222" stroke-width="2" fill="none"/></svg>
+    <script>
+    // 花瓣动态生成
+    function createPetal() {
+        var petal = document.createElement('img');
+        var colors = ['%23f9b6c6','%23fff0f6','%23f7e7c1','%23e2c185'];
+        var color = colors[Math.floor(Math.random()*colors.length)];
+        var shape = Math.random() > 0.5 ? `<ellipse cx="16" cy="20" rx="8" ry="12" fill="${color}"/><ellipse cx="16" cy="12" rx="4" ry="7" fill="%23fff0f6"/>` : `<ellipse cx="16" cy="16" rx="10" ry="8" fill="${color}"/>`;
+        petal.src = `data:image/svg+xml;utf8,<svg width='32' height='32' viewBox='0 0 32 32' fill='none' xmlns='http://www.w3.org/2000/svg'>${shape}</svg>`;
+        petal.className = 'petal';
+        petal.style.left = Math.random() * 100 + 'vw';
+        petal.style.animationDuration = (6 + Math.random() * 4) + 's';
+        document.body.appendChild(petal);
+        setTimeout(()=>{petal.remove();}, 9000);
+    }
+    setInterval(createPetal, 700);
+    </script>
+</body>
+</html> 
